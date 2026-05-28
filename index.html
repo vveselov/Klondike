@@ -1179,6 +1179,7 @@
     let timerId = 0;
     let drag = null;
     let selectedMove = null;
+    let lastCardClick = null;
     let messageTimer = 0;
     let celebrationTimer = 0;
     let autoFinishTimer = 0;
@@ -1219,6 +1220,7 @@
       clearTimeout(autoFinishTimer);
       autoFinishRun += 1;
       selectedMove = null;
+      lastCardClick = null;
       const deck = shuffle(createDeck());
       const cards = Object.fromEntries(deck.map((card) => [card.id, card]));
       const tableau = Array.from({ length: 7 }, () => []);
@@ -1687,6 +1689,7 @@
       clearTimeout(autoFinishTimer);
       autoFinishRun += 1;
       selectedMove = null;
+      lastCardClick = null;
       state.autoFinishing = false;
       state.stock = save.stock.slice();
       state.waste = save.waste.slice();
@@ -1979,6 +1982,7 @@
         return;
       }
       selectedMove = null;
+      lastCardClick = null;
       if (!state.stock.length && !state.waste.length) {
         playSound("invalid");
         showMessage("No cards left in stock or waste.");
@@ -2150,6 +2154,7 @@
     }
 
     function moveSelectedTo(target) {
+      lastCardClick = null;
       if (!target || !selectedMoveIsCurrent()) {
         selectedMove = null;
         render();
@@ -2182,6 +2187,37 @@
           showMessage("That move is not allowed.");
         }
       }
+    }
+
+    function isRepeatedCardClick(cardId, event) {
+      if (!lastCardClick || lastCardClick.id !== cardId) {
+        return false;
+      }
+      const elapsed = Date.now() - lastCardClick.time;
+      const distance = Math.hypot(event.clientX - lastCardClick.x, event.clientY - lastCardClick.y);
+      return elapsed <= 340 && distance <= 14;
+    }
+
+    function rememberCardClick(cardId, event) {
+      lastCardClick = {
+        id: cardId,
+        time: Date.now(),
+        x: event.clientX,
+        y: event.clientY
+      };
+    }
+
+    function handleCardPointerClick(cardId, clickTarget, event) {
+      if (state.won || state.autoFinishing) {
+        return;
+      }
+      if (isRepeatedCardClick(cardId, event)) {
+        lastCardClick = null;
+        trySmartAutoMove(cardId);
+        return;
+      }
+      rememberCardClick(cardId, event);
+      handleCardClick(cardId, clickTarget);
     }
 
     function handleDropTargetClick(event) {
@@ -2393,6 +2429,7 @@
       let moved = false;
       if (target && drag.moved) {
         selectedMove = null;
+        lastCardClick = null;
         moved = moveCards(drag.ids, drag.from, target, {
           previousRects: captureCardRects(),
           showMovedCards: true
@@ -2408,10 +2445,11 @@
       const clickedCard = !drag.moved;
       if (drag.moved && !moved) {
         selectedMove = null;
+        lastCardClick = null;
       }
       cleanupDrag(!moved);
       if (clickedCard) {
-        handleCardClick(clickedId, clickedTarget);
+        handleCardPointerClick(clickedId, clickedTarget, event);
       }
     }
 
@@ -2431,22 +2469,55 @@
       }
     }
 
-    function tryAutoFoundation(cardId, quiet = false) {
+    function firstTableauMoveTarget(group) {
+      for (let pile = 0; pile < state.tableau.length; pile += 1) {
+        if (group.from.type === "tableau" && Number(group.from.key) === pile) {
+          continue;
+        }
+        if (canMoveToTableau(group.ids, pile)) {
+          return { type: "tableau", key: pile };
+        }
+      }
+      return null;
+    }
+
+    function trySmartAutoMove(cardId, quiet = false) {
       if (state.autoFinishing) {
         return false;
       }
+      const hadSelection = Boolean(selectedMove);
+      selectedMove = null;
+      lastCardClick = null;
       const group = draggableGroup(cardId);
-      if (!group || group.ids.length !== 1) {
+      if (!group) {
+        if (hadSelection) {
+          render();
+        }
+        if (!quiet) {
+          playSound("invalid");
+          showMessage("No automatic move is available.");
+        }
         return false;
       }
-      const card = state.cards[cardId];
-      const target = { type: "foundation", suit: card.suit };
-      if (canMoveToFoundation(group.ids, card.suit)) {
-        return moveCards(group.ids, group.from, target);
+
+      if (group.ids.length === 1) {
+        const card = state.cards[group.ids[0]];
+        if (canMoveToFoundation(group.ids, card.suit)) {
+          return moveCards(group.ids, group.from, { type: "foundation", suit: card.suit });
+        }
+      }
+
+      const tableauTarget = firstTableauMoveTarget(group);
+      if (tableauTarget) {
+        return moveCards(group.ids, group.from, tableauTarget);
+      }
+
+      if (hadSelection) {
+        render();
       }
       if (!quiet) {
         playSound("invalid");
-        showMessage("No foundation move is available.");
+        showMessage("No automatic move is available.");
       }
       return false;
     }
@@ -2520,6 +2591,7 @@
       ensureAudioContext();
       clearTimeout(autoFinishTimer);
       selectedMove = null;
+      lastCardClick = null;
       const runId = ++autoFinishRun;
       pushHistory();
       state.autoFinishing = true;
@@ -2705,6 +2777,7 @@
     function handleStockClick() {
       if (selectedMove) {
         clearSelectedMove(true);
+        lastCardClick = null;
         playSound("invalid");
         showMessage("That move is not allowed.");
         return;
@@ -2755,12 +2828,7 @@
         elements.winDialog.classList.remove("show");
         stopVictoryAnimation();
         clearSelectedMove(true);
-      }
-    });
-    document.addEventListener("dblclick", (event) => {
-      const cardNode = event.target.closest(".card.face-up");
-      if (cardNode) {
-        tryAutoFoundation(cardNode.dataset.cardId);
+        lastCardClick = null;
       }
     });
 
