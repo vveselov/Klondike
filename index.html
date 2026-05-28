@@ -370,6 +370,15 @@
       cursor: grabbing;
     }
 
+    .card.selected-card {
+      outline: 3px solid rgba(255, 230, 145, 0.96);
+      outline-offset: 3px;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.7),
+        0 0 24px rgba(125, 234, 255, 0.5),
+        0 12px 24px rgba(4, 12, 32, 0.44);
+    }
+
     .card.red {
       color: #bf1d2d;
     }
@@ -1169,6 +1178,7 @@
     let records = loadRecords();
     let timerId = 0;
     let drag = null;
+    let selectedMove = null;
     let messageTimer = 0;
     let celebrationTimer = 0;
     let autoFinishTimer = 0;
@@ -1208,6 +1218,7 @@
       stopVictoryAnimation();
       clearTimeout(autoFinishTimer);
       autoFinishRun += 1;
+      selectedMove = null;
       const deck = shuffle(createDeck());
       const cards = Object.fromEntries(deck.map((card) => [card.id, card]));
       const tableau = Array.from({ length: 7 }, () => []);
@@ -1530,6 +1541,8 @@
         playCardTap({ delay: 0.075, volume: 0.025 });
       } else if (name === "flip") {
         playCardFlip();
+      } else if (name === "select") {
+        playCardTap({ volume: 0.024 });
       } else if (name === "undo") {
         playCardShuffle();
         playCardBrush({ delay: 0.075, duration: 0.04, volume: 0.02, frequency: 900 });
@@ -1673,6 +1686,7 @@
     function restore(save, previousRects = null) {
       clearTimeout(autoFinishTimer);
       autoFinishRun += 1;
+      selectedMove = null;
       state.autoFinishing = false;
       state.stock = save.stock.slice();
       state.waste = save.waste.slice();
@@ -1850,6 +1864,10 @@
       node.className = `card ${card.faceUp ? `face-up ${card.color}` : "face-down"}`;
       if (card.id) {
         node.dataset.cardId = card.id;
+        if (isSelectedCard(card.id)) {
+          node.classList.add("selected-card");
+          node.setAttribute("aria-selected", "true");
+        }
       }
       if (options.hiddenOriginal) {
         node.classList.add("hidden-original");
@@ -1858,7 +1876,7 @@
         node.setAttribute("aria-label", "Face-down card");
         return node;
       }
-      node.setAttribute("aria-label", `${card.rank} of ${card.suit}`);
+      node.setAttribute("aria-label", `${card.rank} of ${card.suit}${isSelectedCard(card.id) ? ", selected" : ""}`);
       node.innerHTML = `
         <div class="card-corner top"><span class="rank">${card.rank}</span><span class="corner-suit">${card.symbol}</span></div>
         <div class="card-suit">${card.symbol}</div>
@@ -1960,6 +1978,7 @@
       if (state.won || state.autoFinishing) {
         return;
       }
+      selectedMove = null;
       if (!state.stock.length && !state.waste.length) {
         playSound("invalid");
         showMessage("No cards left in stock or waste.");
@@ -2062,6 +2081,119 @@
       }
 
       return null;
+    }
+
+    function sameLocation(a, b) {
+      return a
+        && b
+        && a.type === b.type
+        && String(a.key) === String(b.key)
+        && a.index === b.index;
+    }
+
+    function sameIds(a, b) {
+      return a.length === b.length && a.every((id, index) => id === b[index]);
+    }
+
+    function copyLocation(location) {
+      return {
+        type: location.type,
+        key: location.key,
+        index: location.index
+      };
+    }
+
+    function isSelectedCard(id) {
+      return Boolean(id && selectedMove?.ids.includes(id));
+    }
+
+    function selectedMoveIsCurrent() {
+      if (!selectedMove) {
+        return false;
+      }
+      const group = draggableGroup(selectedMove.anchorId);
+      return Boolean(group && sameLocation(group.from, selectedMove.from) && sameIds(group.ids, selectedMove.ids));
+    }
+
+    function clearSelectedMove(renderBoard = true) {
+      if (!selectedMove) {
+        return;
+      }
+      selectedMove = null;
+      if (renderBoard) {
+        render();
+      }
+    }
+
+    function selectMove(cardId) {
+      const group = draggableGroup(cardId);
+      if (!group) {
+        playSound("invalid");
+        showMessage("That card cannot move.");
+        return;
+      }
+      selectedMove = {
+        anchorId: cardId,
+        ids: group.ids.slice(),
+        from: copyLocation(group.from)
+      };
+      playSound("select");
+      render();
+    }
+
+    function targetFromClick(element) {
+      const target = closestDropTarget(element);
+      if (!target || target.type === "waste") {
+        return null;
+      }
+      return target;
+    }
+
+    function moveSelectedTo(target) {
+      if (!target || !selectedMoveIsCurrent()) {
+        selectedMove = null;
+        render();
+        return false;
+      }
+      const move = selectedMove;
+      selectedMove = null;
+      const moved = moveCards(move.ids, move.from, target);
+      if (!moved) {
+        render();
+      }
+      return moved;
+    }
+
+    function handleCardClick(cardId, clickTarget) {
+      if (state.won || state.autoFinishing) {
+        return;
+      }
+      if (!selectedMove) {
+        selectMove(cardId);
+        return;
+      }
+
+      const clickedSelectedCard = isSelectedCard(cardId);
+      const moved = moveSelectedTo(targetFromClick(clickTarget));
+      if (!moved) {
+        clearSelectedMove(true);
+        if (!clickedSelectedCard) {
+          playSound("invalid");
+          showMessage("That move is not allowed.");
+        }
+      }
+    }
+
+    function handleDropTargetClick(event) {
+      if (!selectedMove || state.won || state.autoFinishing || event.target.closest(".card")) {
+        return;
+      }
+      const moved = moveSelectedTo(targetFromClick(event.target));
+      if (!moved) {
+        clearSelectedMove(true);
+        playSound("invalid");
+        showMessage("That move is not allowed.");
+      }
     }
 
     function canMoveToTableau(ids, targetPileIndex) {
@@ -2260,6 +2392,7 @@
 
       let moved = false;
       if (target && drag.moved) {
+        selectedMove = null;
         moved = moveCards(drag.ids, drag.from, target, {
           previousRects: captureCardRects(),
           showMovedCards: true
@@ -2270,14 +2403,15 @@
         }
       }
 
-      const shouldAutoMove = !drag.moved && drag.ids.length === 1;
       const clickedId = drag.ids[0];
+      const clickedTarget = event.target;
+      const clickedCard = !drag.moved;
+      if (drag.moved && !moved) {
+        selectedMove = null;
+      }
       cleanupDrag(!moved);
-      if (!moved && shouldAutoMove) {
-        const location = locateCard(clickedId);
-        if (location && isTopCard(location)) {
-          tryAutoFoundation(clickedId, true);
-        }
+      if (clickedCard) {
+        handleCardClick(clickedId, clickedTarget);
       }
     }
 
@@ -2385,6 +2519,7 @@
 
       ensureAudioContext();
       clearTimeout(autoFinishTimer);
+      selectedMove = null;
       const runId = ++autoFinishRun;
       pushHistory();
       state.autoFinishing = true;
@@ -2567,7 +2702,17 @@
       messageTimer = window.setTimeout(() => elements.message.classList.remove("show"), 1800);
     }
 
-    elements.stockSlot.addEventListener("click", drawFromStock);
+    function handleStockClick() {
+      if (selectedMove) {
+        clearSelectedMove(true);
+        playSound("invalid");
+        showMessage("That move is not allowed.");
+        return;
+      }
+      drawFromStock();
+    }
+
+    elements.stockSlot.addEventListener("click", handleStockClick);
     elements.newGameBtn.addEventListener("click", newGame);
     elements.undoBtn.addEventListener("click", undo);
     elements.hintBtn.addEventListener("click", showHint);
@@ -2597,6 +2742,7 @@
         elements.historyDialog.classList.remove("show");
       }
     });
+    document.addEventListener("click", handleDropTargetClick);
     document.addEventListener("pointerdown", startDrag);
     window.addEventListener("resize", () => {
       if (!drag) {
@@ -2608,6 +2754,7 @@
         elements.historyDialog.classList.remove("show");
         elements.winDialog.classList.remove("show");
         stopVictoryAnimation();
+        clearSelectedMove(true);
       }
     });
     document.addEventListener("dblclick", (event) => {

@@ -6,7 +6,7 @@ A polished browser-based Klondike Solitaire game in a single HTML file. The inte
 
 - Classic Klondike tableau, stock, waste, and four foundations
 - Draw 1 and Draw 3 modes
-- Drag-and-drop card movement with legal move validation
+- Drag-and-drop and click-to-move card movement with legal move validation
 - Smooth card movement, flip animations, and auto-finish animations
 - Space-themed table and card backs
 - Sound effects with a Sound On/Off toggle
@@ -32,6 +32,9 @@ http://localhost:4173/
 ## Controls
 
 - `New Game` starts a shuffled deal
+- Click a movable card to select it, then click a tableau pile or foundation to move it
+- Drag cards or valid card stacks to move them directly
+- Double-click a card to move it to a foundation when possible
 - `Undo` reverts the previous move
 - `Hint` shows an available move
 - `Auto Finish` completes the game when it is safe
