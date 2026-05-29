@@ -2195,7 +2195,7 @@
       }
       const elapsed = Date.now() - lastCardClick.time;
       const distance = Math.hypot(event.clientX - lastCardClick.x, event.clientY - lastCardClick.y);
-      return elapsed <= 340 && distance <= 14;
+      return elapsed <= 520 && distance <= 32;
     }
 
     function rememberCardClick(cardId, event) {
@@ -2209,6 +2209,15 @@
 
     function handleCardPointerClick(cardId, clickTarget, event) {
       if (state.won || state.autoFinishing) {
+        return;
+      }
+      const clickedSelectedStack = selectedMove
+        && selectedMove.ids.includes(cardId)
+        && lastCardClick?.id === selectedMove.anchorId
+        && Date.now() - lastCardClick.time <= 650;
+      if (clickedSelectedStack) {
+        lastCardClick = null;
+        trySmartAutoMove(selectedMove.anchorId);
         return;
       }
       if (isRepeatedCardClick(cardId, event)) {
