@@ -350,9 +350,17 @@
       height: auto;
       aspect-ratio: 1 / 1.38;
       border-radius: var(--radius);
-      background: #fffdf7;
-      border: 1px solid rgba(30, 36, 34, 0.22);
-      box-shadow: 0 8px 14px rgba(7, 20, 15, 0.3);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 48%, rgba(125, 244, 255, 0.14), transparent 34%),
+        radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.88) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 78% 68%, rgba(244, 220, 122, 0.72) 0 1px, transparent 1.4px),
+        linear-gradient(150deg, #f9fbff 0%, #e8f5ff 44%, #d8e3ff 100%);
+      border: 1px solid rgba(83, 135, 255, 0.38);
+      box-shadow:
+        inset 0 0 0 3px rgba(255, 255, 255, 0.52),
+        inset 0 0 0 5px rgba(31, 70, 155, 0.12),
+        0 8px 14px rgba(7, 20, 15, 0.3);
       color: #111827;
       user-select: none;
       touch-action: none;
@@ -362,8 +370,30 @@
       will-change: translate, opacity, transform;
     }
 
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 8%;
+      border-radius: calc(var(--radius) - 2px);
+      border: 1px solid rgba(65, 115, 215, 0.16);
+      background:
+        linear-gradient(90deg, transparent 49%, rgba(38, 116, 210, 0.12) 49% 51%, transparent 51%),
+        linear-gradient(0deg, transparent 49%, rgba(38, 116, 210, 0.1) 49% 51%, transparent 51%);
+      pointer-events: none;
+    }
+
     .card.face-up {
       cursor: grab;
+    }
+
+    .card.face-up.card-art {
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+    }
+
+    .card.face-up.card-art::before {
+      display: none;
     }
 
     .card.face-up:active {
@@ -380,34 +410,28 @@
     }
 
     .card.red {
-      color: #bf1d2d;
+      color: #d12a55;
     }
 
     .card.black {
-      color: #101827;
+      color: #10214a;
     }
 
     .card.face-down {
       cursor: default;
-      border-color: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.28);
       background:
-        radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.86) 0 2px, transparent 2.4px),
-        radial-gradient(circle at 72% 64%, rgba(255, 231, 151, 0.82) 0 1.7px, transparent 2.2px),
-        radial-gradient(circle at 46% 78%, rgba(125, 234, 255, 0.72) 0 1.6px, transparent 2px),
-        linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0 10%, transparent 10% 20%, rgba(255, 255, 255, 0.15) 20% 30%, transparent 30% 40%, rgba(255, 255, 255, 0.12) 40% 50%, transparent 50% 60%, rgba(255, 255, 255, 0.1) 60% 70%, transparent 70% 80%, rgba(255, 255, 255, 0.08) 80% 90%, transparent 90%),
-        linear-gradient(145deg, #6236d9, #0f49b8 48%, #081536);
-      box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.18), 0 8px 14px rgba(7, 20, 15, 0.34);
+        url("assets/card-back-ai.png") center / cover no-repeat,
+        linear-gradient(145deg, #071028, #0f49b8 48%, #050715);
+      box-shadow:
+        inset 0 0 0 3px rgba(255, 255, 255, 0.14),
+        0 0 22px rgba(88, 214, 255, 0.16),
+        0 8px 14px rgba(7, 20, 15, 0.34);
     }
 
+    .card.face-down::before,
     .card.face-down::after {
-      content: "";
-      position: absolute;
-      inset: 18%;
-      border-radius: 6px;
-      border: 2px solid rgba(255, 255, 255, 0.48);
-      background:
-        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.42) 0 12%, transparent 13%),
-        repeating-linear-gradient(45deg, transparent 0 7px, rgba(255, 255, 255, 0.22) 7px 9px);
+      display: none;
     }
 
     .stock-slot.has-stock {
@@ -445,6 +469,8 @@
       font-weight: 900;
       line-height: 1;
       font-size: clamp(0.68rem, 2.25vw, 1.05rem);
+      z-index: 2;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
     }
 
     .card-corner.top {
@@ -467,13 +493,80 @@
       font-size: clamp(0.78rem, 2.35vw, 1.12rem);
     }
 
-    .card-suit {
+    .card-suit,
+    .card-court {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       font-size: clamp(1.45rem, 5.9vw, 3.1rem);
       line-height: 1;
+      z-index: 1;
+      text-shadow:
+        0 0 10px rgba(125, 244, 255, 0.3),
+        0 1px 0 rgba(255, 255, 255, 0.76);
+    }
+
+    .card-court {
+      display: grid;
+      place-items: center;
+      width: 54%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 1px solid currentColor;
+      background:
+        radial-gradient(circle, rgba(255, 255, 255, 0.78), rgba(125, 244, 255, 0.1) 58%, transparent 62%),
+        repeating-conic-gradient(from 22deg, currentColor 0 6deg, transparent 6deg 18deg);
+      box-shadow:
+        inset 0 0 18px rgba(255, 255, 255, 0.42),
+        0 0 18px rgba(125, 244, 255, 0.22);
+    }
+
+    .court-suit {
+      font-size: clamp(1.6rem, 6.5vw, 3.2rem);
+    }
+
+    .court-rank {
+      position: absolute;
+      bottom: 10%;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(7, 11, 34, 0.78);
+      color: #f8fafc;
+      font-size: clamp(0.54rem, 1.6vw, 0.76rem);
+      letter-spacing: 0.08em;
+    }
+
+    .card-pips {
+      position: absolute;
+      inset: 19% 20% 17%;
+      z-index: 1;
+    }
+
+    .pip {
+      position: absolute;
+      left: var(--x);
+      top: var(--y);
+      transform: translate(-50%, -50%) rotate(var(--rot, 0deg));
+      width: clamp(0.8rem, 3.1vw, 1.55rem);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      font-size: clamp(0.9rem, 3.5vw, 1.82rem);
+      line-height: 1;
+      text-shadow:
+        0 0 8px rgba(125, 244, 255, 0.24),
+        0 1px 0 rgba(255, 255, 255, 0.72);
+    }
+
+    .pip::before {
+      content: "";
+      position: absolute;
+      inset: 9%;
+      border-radius: 50%;
+      border: 1px solid currentColor;
+      opacity: 0.18;
+      transform: rotate(45deg);
     }
 
     .card.hidden-original {
@@ -501,11 +594,8 @@
       border-radius: inherit;
       border: 1px solid rgba(255, 255, 255, 0.2);
       background:
-        radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.86) 0 2px, transparent 2.4px),
-        radial-gradient(circle at 72% 64%, rgba(255, 231, 151, 0.82) 0 1.7px, transparent 2.2px),
-        radial-gradient(circle at 46% 78%, rgba(125, 234, 255, 0.72) 0 1.6px, transparent 2px),
-        linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0 10%, transparent 10% 20%, rgba(255, 255, 255, 0.15) 20% 30%, transparent 30% 40%, rgba(255, 255, 255, 0.12) 40% 50%, transparent 50% 60%, rgba(255, 255, 255, 0.1) 60% 70%, transparent 70% 80%, rgba(255, 255, 255, 0.08) 80% 90%, transparent 90%),
-        linear-gradient(145deg, #6236d9, #0f49b8 48%, #081536);
+        url("assets/card-back-ai.png") center / cover no-repeat,
+        linear-gradient(145deg, #071028, #0f49b8 48%, #050715);
       box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.18);
       transform-origin: left center;
       animation: revealCardBack var(--flip-duration, 520ms) cubic-bezier(.18,.78,.18,1) forwards;
@@ -518,9 +608,8 @@
       z-index: 7;
       border-radius: 6px;
       border: 2px solid rgba(255, 255, 255, 0.48);
-      background:
-        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.42) 0 12%, transparent 13%),
-        repeating-linear-gradient(45deg, transparent 0 7px, rgba(255, 255, 255, 0.22) 7px 9px);
+      background: transparent;
+      opacity: 0;
       transform-origin: left center;
       animation: revealCardBack var(--flip-duration, 520ms) cubic-bezier(.18,.78,.18,1) forwards;
     }
@@ -1118,10 +1207,10 @@
 
   <script>
     const suits = [
-      { id: "hearts", symbol: "♥", color: "red" },
-      { id: "diamonds", symbol: "♦", color: "red" },
-      { id: "clubs", symbol: "♣", color: "black" },
-      { id: "spades", symbol: "♠", color: "black" }
+      { id: "hearts", symbol: "\u2665", color: "red" },
+      { id: "diamonds", symbol: "\u2666", color: "red" },
+      { id: "clubs", symbol: "\u2663", color: "black" },
+      { id: "spades", symbol: "\u2660", color: "black" }
     ];
     const ranks = [
       { label: "A", value: 1 },
@@ -1139,6 +1228,17 @@
       { label: "K", value: 13 }
     ];
     const foundationOrder = ["hearts", "diamonds", "clubs", "spades"];
+    const pipLayouts = {
+      2: [[50, 25, 0], [50, 75, 180]],
+      3: [[50, 23, 0], [50, 50, 0], [50, 77, 180]],
+      4: [[32, 25, 0], [68, 25, 0], [32, 75, 180], [68, 75, 180]],
+      5: [[32, 24, 0], [68, 24, 0], [50, 50, 0], [32, 76, 180], [68, 76, 180]],
+      6: [[32, 22, 0], [68, 22, 0], [32, 50, 0], [68, 50, 0], [32, 78, 180], [68, 78, 180]],
+      7: [[32, 20, 0], [68, 20, 0], [50, 35, 0], [32, 50, 0], [68, 50, 0], [32, 80, 180], [68, 80, 180]],
+      8: [[32, 19, 0], [68, 19, 0], [50, 34, 0], [32, 48, 0], [68, 48, 0], [50, 62, 180], [32, 81, 180], [68, 81, 180]],
+      9: [[32, 18, 0], [68, 18, 0], [32, 38, 0], [68, 38, 0], [50, 50, 0], [32, 62, 180], [68, 62, 180], [32, 82, 180], [68, 82, 180]],
+      10: [[32, 16, 0], [68, 16, 0], [50, 28, 0], [32, 40, 0], [68, 40, 0], [32, 60, 180], [68, 60, 180], [50, 72, 180], [32, 84, 180], [68, 84, 180]]
+    };
     const storageKey = "klondike-solitaire-records";
     const soundStorageKey = "klondike-solitaire-sound";
     const elements = {
@@ -1862,6 +1962,35 @@
       elements.stockSlot.disabled = state.autoFinishing || state.won;
     }
 
+    function cardCenterTemplate(card) {
+      const layout = pipLayouts[card.value];
+      if (layout) {
+        const pips = layout.map(([x, y, rotation]) => (
+          `<span class="pip" style="--x: ${x}%; --y: ${y}%; --rot: ${rotation}deg">${card.symbol}</span>`
+        )).join("");
+        return `<div class="card-pips" aria-hidden="true">${pips}</div>`;
+      }
+      if (card.value === 1) {
+        return `<div class="card-suit" aria-hidden="true">${card.symbol}</div>`;
+      }
+      return `
+        <div class="card-court" aria-hidden="true">
+          <span class="court-suit">${card.symbol}</span>
+          <span class="court-rank">${card.rank}</span>
+        </div>
+      `;
+    }
+
+    function cardAssetName(card) {
+      const rankNames = {
+        A: "ace",
+        J: "jack",
+        Q: "queen",
+        K: "king"
+      };
+      return `${rankNames[card.rank] || card.rank}_of_${card.suit}.png`;
+    }
+
     function cardTemplate(card, options = {}) {
       const node = document.createElement("div");
       node.className = `card ${card.faceUp ? `face-up ${card.color}` : "face-down"}`;
@@ -1880,11 +2009,8 @@
         return node;
       }
       node.setAttribute("aria-label", `${card.rank} of ${card.suit}${isSelectedCard(card.id) ? ", selected" : ""}`);
-      node.innerHTML = `
-        <div class="card-corner top"><span class="rank">${card.rank}</span><span class="corner-suit">${card.symbol}</span></div>
-        <div class="card-suit">${card.symbol}</div>
-        <div class="card-corner bottom"><span class="rank">${card.rank}</span><span class="corner-suit">${card.symbol}</span></div>
-      `;
+      node.classList.add("card-art");
+      node.style.backgroundImage = `url("assets/cards/${cardAssetName(card)}")`;
       return node;
     }
 

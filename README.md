@@ -1,6 +1,6 @@
 # Klondike Solitaire
 
-A polished browser-based Klondike Solitaire game in a single HTML file. The interface is in English and the game runs without a build step or external assets.
+A polished browser-based Klondike Solitaire game in a single HTML file with local card art assets. The interface is in English and the game runs without a build step.
 
 ## Features
 
@@ -8,7 +8,7 @@ A polished browser-based Klondike Solitaire game in a single HTML file. The inte
 - Draw 1 and Draw 3 modes
 - Drag-and-drop and click-to-move card movement with legal move validation
 - Smooth card movement, flip animations, and auto-finish animations
-- Space-themed table and card backs
+- Space-themed table, card backs, and full illustrated card faces
 - Sound effects with a Sound On/Off toggle
 - Hints, undo, score, move counter, and timer
 - Auto Finish when all remaining cards can safely move to foundations
